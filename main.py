@@ -1,5 +1,5 @@
 import tqdm
-from openprompt.data_utils.text_classification_dataset import  NewstitleProcessor, AgnewsTitleProcessor, SnippetsProcessor
+from data_utils.Processors import AgnewsTitleProcessor, SnippetsProcessor, NewstitleProcessor, CustomProcessor
 import torch
 from openprompt.data_utils.utils import InputExample
 import argparse
@@ -44,8 +44,8 @@ plm, tokenizer, model_config, WrapperClass = load_plm(args.model, args.model_nam
 dataset = {}
 
 if args.dataset == "agnewstitle":
-    dataset['train'] = AgnewsTitleProcessor().get_train_examples("./datasets/TextClassification/agnewstitle/")
-    dataset['test'] = AgnewsTitleProcessor().get_test_examples("./datasets/TextClassification/agnewstitle/")
+    dataset['train'] = AgnewsTitleProcessor().get_examples("./datasets/TextClassification/agnewstitle/","train")
+    dataset['test'] = AgnewsTitleProcessor().get_examples("./datasets/TextClassification/agnewstitle/","test")
     class_labels = AgnewsTitleProcessor().get_labels()
     scriptsbase = "TextClassification/agnewstitle"
     scriptformat = "txt"
@@ -54,8 +54,8 @@ if args.dataset == "agnewstitle":
     batch_s = 1
 
 elif args.dataset == "snippets":
-    dataset['train'] = SnippetsProcessor().get_train_examples("./datasets/TextClassification/snippets/")
-    dataset['test'] = SnippetsProcessor().get_test_examples("./datasets/TextClassification/snippets/")
+    dataset['train'] = SnippetsProcessor().get_examples("./datasets/TextClassification/snippets/","train")
+    dataset['test'] = SnippetsProcessor().get_examples("./datasets/TextClassification/snippets/","test")
     class_labels = SnippetsProcessor().get_labels()
     scriptsbase = "TextClassification/snippets"
     scriptformat = "txt"
@@ -64,16 +64,25 @@ elif args.dataset == "snippets":
     batch_s = 1
 
 elif args.dataset == "newstitle":
-    dataset['train'] = NewstitleProcessor().get_train_examples("./datasets/TextClassification/newstitle/")
-    dataset['test'] = NewstitleProcessor().get_test_examples("./datasets/TextClassification/newstitle/")
+    dataset['train'] = NewstitleProcessor().get_examples("./datasets/TextClassification/newstitle/","train")
+    dataset['test'] = NewstitleProcessor().get_examples("./datasets/TextClassification/newstitle/","test")
     class_labels = NewstitleProcessor().get_labels()
     scriptsbase = "TextClassification/newstitle"
     scriptformat = "txt"
     cutoff = 0.5
     max_seq_l = 128
     batch_s = 5
-
-
+elif args.dataset == 'Customized':
+    with open('./datasets/TextClassification/cutomized/classes.txt','r') as f:
+    	labels = f.read().split('\n')
+    dataset['train'] = CustomProcessor(labels).get_examples("./datasets/TextClassification/cutomized/","train")
+    dataset['test'] = CustomProcessor(labels).get_examples("./datasets/TextClassification/cutomized/","test")
+    class_labels = CustomProcessor(labels).get_labels()
+    scriptsbase = "TextClassification/cutomized"
+    scriptformat = "txt"
+    cutoff = 0.5
+    max_seq_l = 128
+    batch_s = 5
 
 else:
     raise NotImplementedError
