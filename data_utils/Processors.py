@@ -40,7 +40,7 @@ class SnippetsProcessor(DataProcessor):
             for idx, row in enumerate(reader):
                 label, headline = row
                 text_a = headline.replace('\\', ' ')
-                example = InputExample(guid=str(idx), text_a=text_a, label=int(label)-1)
+                example = InputExample(guid=str(idx), text_a=text_a,label=int(label)-1)
                 examples.append(example)
         return examples
         
@@ -59,7 +59,7 @@ class NewstitleProcessor(DataProcessor):
             for idx, row in enumerate(reader):
                 label, headline = row
                 text_a = headline.replace('\\', ' ')
-                example = InputExample(guid=str(idx), text_a=text_a, label=int(label)-1)
+                example = InputExample(guid=str(idx), text_a=text_a,label=int(label)-1)
                 examples.append(example)
         return examples
         
@@ -77,6 +77,6 @@ class CustomProcessor(DataProcessor):
             for idx, row in enumerate(reader):
                 label, headline = row
                 text_a = headline.replace('\\', ' ')
-                example = InputExample(guid=str(idx), text_a=text_a, label=int(label)-1)
+                example = InputExample(guid=str(idx), text_a=text_a,label=int(label)-1)
                 examples.append(example)
         return examples

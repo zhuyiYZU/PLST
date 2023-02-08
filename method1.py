@@ -1,5 +1,5 @@
 import torch
-from transformers import *
+from transformers import BertTokenizer,BertForMaskedLM
 import pdb
 import operator
 from collections import OrderedDict
