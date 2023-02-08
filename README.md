@@ -1,7 +1,7 @@
 This is the repository for the "Prompt-Learing for Short Text Classification".
 
 First you need to install OpenPrompt.
-seee https://github.com/thunlp/OpenPrompt
+see https://github.com/thunlp/OpenPrompt
 
 Then you need to use the methods to filter tag words,In this process, you need to download the corresponding vocabulary.
 These words need to be put scripts/TextClassification，and modify the corresponding position.
