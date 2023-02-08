@@ -72,18 +72,17 @@ elif args.dataset == "newstitle":
     cutoff = 0.5
     max_seq_l = 128
     batch_s = 5
-elif args.dataset == 'Customized':
-    with open('./datasets/TextClassification/cutomized/classes.txt','r') as f:
+elif args.dataset == 'customized':
+    with open('./datasets/TextClassification/customized/classes.txt','r') as f:
     	labels = f.read().split('\n')
-    dataset['train'] = CustomProcessor(labels).get_examples("./datasets/TextClassification/cutomized/","train")
-    dataset['test'] = CustomProcessor(labels).get_examples("./datasets/TextClassification/cutomized/","test")
+    dataset['train'] = CustomProcessor(labels).get_examples("./datasets/TextClassification/customized/","train")
+    dataset['test'] = CustomProcessor(labels).get_examples("./datasets/TextClassification/customized/","test")
     class_labels = CustomProcessor(labels).get_labels()
-    scriptsbase = "TextClassification/cutomized"
+    scriptsbase = "TextClassification/customized"
     scriptformat = "txt"
     cutoff = 0.5
     max_seq_l = 128
-    batch_s = 5
-
+    batch_s = 1
 else:
     raise NotImplementedError
 
