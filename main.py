@@ -14,8 +14,13 @@ parser = argparse.ArgumentParser("")
 parser.add_argument("--shot", type=int, default=150)
 parser.add_argument("--seed", type=int, default=144)
 parser.add_argument("--plm_eval_mode", action="store_true")
+<<<<<<< HEAD
 parser.add_argument("--model", type=str, default='bert')
 parser.add_argument("--model_name_or_path", default='bert-base-cased') # xlm-roberta-base # roberta-base # google/t5-base-lm-adapt # google/t5-xl-lm-adapt
+=======
+parser.add_argument("--model", type=str, default='roberta')
+parser.add_argument("--model_name_or_path", default='roberta-large')
+>>>>>>> 27c744522a551060ef1fda7bde07789473c33a48
 parser.add_argument("--verbalizer", type=str)
 parser.add_argument("--calibration", action="store_true")
 parser.add_argument("--filter", default="none", type=str)
