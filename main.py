@@ -1,5 +1,5 @@
 import tqdm
-from openprompt.data_utils.text_classification_dataset import  NewstitleProcessor, AgnewsTitleProcessor, SnippetsProcessor
+from openprompt_.data_utils.text_classification_dataset import CustomProcessor
 import torch
 from openprompt.data_utils.utils import InputExample
 import argparse
@@ -8,23 +8,28 @@ from openprompt import *
 
 from openprompt import PromptDataLoader
 
-from openprompt.prompts import ManualTemplate
+from openprompt.prompts import MixedTemplate,KnowledgeableVerbalizer
 
 parser = argparse.ArgumentParser("")
-parser.add_argument("--shot", type=int, default=5)
+parser.add_argument("--shot", type=int, default=150)
 parser.add_argument("--seed", type=int, default=144)
 parser.add_argument("--plm_eval_mode", action="store_true")
+<<<<<<< HEAD
 parser.add_argument("--model", type=str, default='bert')
-parser.add_argument("--model_name_or_path", default='bert-base-cased')
+parser.add_argument("--model_name_or_path", default='bert-base-cased') # xlm-roberta-base # roberta-base # google/t5-base-lm-adapt # google/t5-xl-lm-adapt
+=======
+parser.add_argument("--model", type=str, default='roberta')
+parser.add_argument("--model_name_or_path", default='roberta-large')
+>>>>>>> 27c744522a551060ef1fda7bde07789473c33a48
 parser.add_argument("--verbalizer", type=str)
 parser.add_argument("--calibration", action="store_true")
 parser.add_argument("--filter", default="none", type=str)
-parser.add_argument("--template_id", type=int)
+parser.add_argument("--template_id", type=int, default=0)
 parser.add_argument("--dataset", type=str)
 parser.add_argument("--result_file", type=str, default="../sfs_scripts/results.txt")
 parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
-parser.add_argument("--max_epochs", type=int, default=5)
-parser.add_argument("--kptw_lr", default=0.06, type=float)
+parser.add_argument("--max_epochs", type=int, default=20)
+parser.add_argument("--kptw_lr", default=0.01, type=float)
 parser.add_argument("--pred_temp", default=1.0, type=float)
 parser.add_argument("--max_token_split", default=-1, type=int)
 args = parser.parse_args()
@@ -44,9 +49,11 @@ plm, tokenizer, model_config, WrapperClass = load_plm(args.model, args.model_nam
 dataset = {}
 
 if args.dataset == "agnewstitle":
-    dataset['train'] = AgnewsTitleProcessor().get_train_examples("./datasets/TextClassification/agnewstitle/")
-    dataset['test'] = AgnewsTitleProcessor().get_test_examples("./datasets/TextClassification/agnewstitle/")
-    class_labels = AgnewsTitleProcessor().get_labels()
+    with open('./datasets/TextClassification/' + args.dataset + '/classes.txt','r') as f:
+    	labels = f.read().split('\n')[:-1]
+    dataset['train'] = CustomProcessor(labels).get_examples('./datasets/TextClassification/' + args.dataset+'/',"train")
+    dataset['test'] = CustomProcessor(labels).get_examples('./datasets/TextClassification/' + args.dataset+'/',"test")
+    class_labels = CustomProcessor(labels).get_labels()
     scriptsbase = "TextClassification/agnewstitle"
     scriptformat = "txt"
     cutoff = 0.5
@@ -54,9 +61,11 @@ if args.dataset == "agnewstitle":
     batch_s = 1
 
 elif args.dataset == "snippets":
-    dataset['train'] = SnippetsProcessor().get_train_examples("./datasets/TextClassification/snippets/")
-    dataset['test'] = SnippetsProcessor().get_test_examples("./datasets/TextClassification/snippets/")
-    class_labels = SnippetsProcessor().get_labels()
+    with open('./datasets/TextClassification/' + args.dataset + '/classes.txt','r') as f:
+    	labels = f.read().split('\n')[:-1]
+    dataset['train'] = CustomProcessor(labels).get_examples('./datasets/TextClassification/' + args.dataset+'/',"train")
+    dataset['test'] = CustomProcessor(labels).get_examples('./datasets/TextClassification/' + args.dataset+'/',"test")
+    class_labels = CustomProcessor(labels).get_labels()
     scriptsbase = "TextClassification/snippets"
     scriptformat = "txt"
     cutoff = 0.5
@@ -64,43 +73,59 @@ elif args.dataset == "snippets":
     batch_s = 1
 
 elif args.dataset == "newstitle":
-    dataset['train'] = NewstitleProcessor().get_train_examples("./datasets/TextClassification/newstitle/")
-    dataset['test'] = NewstitleProcessor().get_test_examples("./datasets/TextClassification/newstitle/")
-    class_labels = NewstitleProcessor().get_labels()
+    with open('./datasets/TextClassification/' + args.dataset + '/classes.txt','r') as f:
+    	labels = f.read().split('\n')[:-1]
+    dataset['train'] = CustomProcessor(labels).get_examples('./datasets/TextClassification/' + args.dataset+'/',"train")
+    dataset['test'] = CustomProcessor(labels).get_examples('./datasets/TextClassification/' + args.dataset+'/',"test")
+    class_labels = CustomProcessor(labels).get_labels()
     scriptsbase = "TextClassification/newstitle"
     scriptformat = "txt"
     cutoff = 0.5
     max_seq_l = 128
-    batch_s = 5
-
-
-
+    batch_s = 1
+elif args.dataset == 'customized':
+    with open('./datasets/TextClassification/' + args.dataset + '/classes.txt','r') as f:
+    	labels = f.read().split('\n')[:-1]
+    dataset['train'] = CustomProcessor(labels).get_examples('./datasets/TextClassification/' + args.dataset+'/',"train")
+    dataset['test'] = CustomProcessor(labels).get_examples('./datasets/TextClassification/' + args.dataset+'/',"test")
+    class_labels = CustomProcessor(labels).get_labels()
+    scriptsbase = "TextClassification/customized"
+    scriptformat = "txt"
+    cutoff = 0.5
+    max_seq_l = 128
+    batch_s = 1
 else:
     raise NotImplementedError
 
 
-mytemplate = ManualTemplate(model=plm,tokenizer=tokenizer).from_file(path=f"./scripts/{scriptsbase}/manual_template.txt",
-                                                           choice=args.template_id)
-if args.verbalizer == "cpt":
-    myverbalizer = CptVerbalizer(tokenizer, classes=class_labels, candidate_frac=cutoff, pred_temp=args.pred_temp,
-                                 max_token_split=args.max_token_split).from_file(
-        path=f"./scripts/{scriptsbase}/cpt_verbalizer.{scriptformat}")
+mytemplate = MixedTemplate(model=plm, 
+			    tokenizer=tokenizer,
+			    text ='This sentence: "{"placeholder":"text_a"}", is a {"mask"} question.',
+			    placeholder_mapping= {'<text_a>':'text_a','<text_b>':'text_b'})
+
+#myverbalizer = CptVerbalizer(tokenizer, classes=class_labels, candidate_frac=cutoff, pred_temp=args.pred_temp, max_token_split=args.max_token_split)\
+#				.from_file(path=f"./scripts/{scriptsbase}/cpt_verbalizer.{scriptformat}")
+myverbalizer = KnowledgeableVerbalizer(tokenizer, classes=class_labels, candidate_frac=cutoff, pred_temp=args.pred_temp, max_token_split=args.max_token_split)\
+    				.from_file(path=f"./scripts/{scriptsbase}/cpt_verbalizer.{scriptformat}")
 
 
 
 
 from openprompt import PromptForClassification
 
-use_cuda = True
+use_cuda = False
 prompt_model = PromptForClassification(plm=plm, template=mytemplate, verbalizer=myverbalizer, freeze_plm=False,
                                        plm_eval_mode=args.plm_eval_mode)
 if use_cuda:
     prompt_model = prompt_model.cuda()
 
 
-from openprompt.data_utils.data_sampler import FewShotSampler
-sampler = FewShotSampler(num_examples_per_label=args.shot, also_sample_dev=True, num_examples_per_label_dev=args.shot)
-dataset['train'], dataset['validation'] = sampler(dataset['train'], seed=args.seed)
+from  sklearn.model_selection import train_test_split
+dataset['train'], dataset['validation'] = train_test_split(dataset['train'], test_size=0.02, random_state=args.seed, shuffle=True)
+
+#from openprompt.data_utils.data_sampler import FewShotSampler
+#sampler = FewShotSampler(num_examples_per_label=args.shot, also_sample_dev=True, num_examples_per_label_dev=args.shot)
+#dataset['train'], dataset['validation'] = sampler(dataset['train'], seed=args.seed)
 
 train_dataloader = PromptDataLoader(dataset=dataset["train"], template=mytemplate, tokenizer=tokenizer,
                                     tokenizer_wrapper_class=WrapperClass, max_seq_length=max_seq_l,
@@ -189,7 +214,7 @@ elif args.verbalizer == "manual":
 
     # Using different optimizer for prompt parameters and model parameters
 
-    optimizer1 = AdamW(optimizer_grouped_parameters1, lr=3e-5)
+    optimizer1 = AdamW(optimizer_grouped_parameters1, lr=1e-5)
 
     tot_step = len(train_dataloader) // args.gradient_accumulation_steps * args.max_epochs
     scheduler1 = get_linear_schedule_with_warmup(
@@ -205,11 +230,12 @@ best_val_acc = 0
 for epoch in range(args.max_epochs):
     tot_loss = 0
     prompt_model.train()
-    for step, inputs in enumerate(train_dataloader):
+    for step, inputs in tqdm.tqdm(enumerate(train_dataloader)):
         if use_cuda:
             inputs = inputs.cuda()
         logits = prompt_model(inputs)
         labels = inputs['label']
+
         loss = loss_func(logits, labels)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(prompt_model.parameters(), 1.0)
@@ -222,15 +248,22 @@ for epoch in range(args.max_epochs):
             optimizer2.zero_grad()
         if scheduler2 is not None:
             scheduler2.step()
+        if step % 500 == 0:
+            val_acc = evaluate(prompt_model, validation_dataloader, desc="Valid")
+            if val_acc >= best_val_acc:
+                torch.save(prompt_model.state_dict(), f"./ckpts/{this_run_unicode}.ckpt")
+                best_val_acc = val_acc
+            print("Epoch {}, val_acc {:.4f}".format(epoch, val_acc), flush=True)
+
 
     val_acc = evaluate(prompt_model, validation_dataloader, desc="Valid")
     if val_acc >= best_val_acc:
         torch.save(prompt_model.state_dict(), f"./ckpts/{this_run_unicode}.ckpt")
         best_val_acc = val_acc
-    print("Epoch {}, val_acc {}".format(epoch, val_acc), flush=True)
+    print("Epoch {}, val_acc {:.4f}".format(epoch, val_acc), flush=True)
 
 prompt_model.load_state_dict(torch.load(f"./ckpts/{this_run_unicode}.ckpt"))
-prompt_model = prompt_model.cuda()
+prompt_model = prompt_model#.cuda()
 test_acc = evaluate(prompt_model, test_dataloader, desc="Test")
 
 content_write = "=" * 20 + "\n"
